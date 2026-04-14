@@ -6,7 +6,7 @@ import time
 import re
 from typing import List, Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
@@ -291,3 +291,29 @@ def verify_claim(payload: VerifyRequest):
         corrective_information=explanation,
         evidence=evidence,
     )
+
+
+@app.post("/verify-multimodal")
+async def verify_multimodal(text: str = None, file: UploadFile = File(None)):
+    if text:
+        claim = text
+    elif file:
+        import tempfile
+        from pathlib import Path
+
+        suffix = Path(file.filename).suffix if file.filename else ""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file.write(await file.read())
+            file_path = temp_file.name
+
+        if file.filename and file.filename.lower().endswith(("png", "jpg", "jpeg", "webp")):
+            from backend.multimodal.image_input import process_image
+
+            claim = process_image(file_path)
+        else:
+            return {"error": "Unsupported file type"}
+    else:
+        return {"error": "No input provided"}
+
+    payload = VerifyRequest(claim=claim)
+    return verify_claim(payload)

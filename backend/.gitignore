@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# ML Models
+*.joblib
+*.bin
+
+# Temp files
+temp_*
+*.wav
+
+# Images (testing files)
+*.png
+*.jpg
+*.jpeg
+
+# Environment
+.env
